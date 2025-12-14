@@ -49,8 +49,39 @@ function custom_git_status() {
   fi
 }
 
+
+
 # =========================================================
-# 3. Prompt Variable Definition
+# 3. Terminal Resize Control
+# =========================================================
+
+# Global variable to hold the pre-calculated separator line string.
+# This must be defined globally so TRAPWINCH can update it.
+SEP_LINE_VAR="" 
+
+# Function to calculate the working separator line based on current width.
+# Note: This is now a standalone function definition.
+function calculate_separator_line() {
+  # YOUR CONFIRMED WORKING LINE, now captured into a variable.
+  SEP_LINE_VAR="${PROMPT_CHAR_COLOR}${SEP_START}${SEP_COLOR}$(/usr/bin/printf '%.s'${SEP}'' $(/usr/bin/seq 3 $(tput cols)))${PROMPT_CHAR_COLOR}${SEP_END}%f"
+}
+
+# Special Zsh function called when the window is resized (SIGWINCH).
+# This is the hook that ensures the prompt redraws with the new width.
+function TRAPWINCH() {
+  # 1. Recalculate the line width
+  calculate_separator_line
+  # 2. Force Zsh to redraw the prompt immediately
+  # This makes the change instant, without needing to press Enter.
+  zle && zle reset-prompt
+}
+
+# Execute this once when the theme loads to set the initial width.
+# This ensures the separator line exists before the first prompt.
+calculate_separator_line
+
+# =========================================================
+# 4. Prompt Variable Definition
 # =========================================================
 
 # Clear PROMPT/RPROMPT to start fresh
@@ -59,7 +90,7 @@ RPROMPT=""
 
 # --- Line 1: Separator Line (Dotted Underline Simulation) ---
     NEWLINE=$'\n'
-    PROMPT+="${PROMPT_CHAR_COLOR}${SEP_START}${SEP_COLOR}$(/usr/bin/printf '%.s'${SEP}'' $(/usr/bin/seq 3 $(tput cols)))${PROMPT_CHAR_COLOR}${SEP_END}${NEWLINE}"
+    PROMPT+="${SEP_LINE_VAR}${NEWLINE}"
 
 # --- Line 2: The Core Information Line ---
 # Original format requested: [time in 12hr] [username {git ? "- git branch"}] [pwd with ~] [points]
